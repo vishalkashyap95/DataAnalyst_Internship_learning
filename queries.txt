@@ -1,0 +1,462 @@
+
+
+create or replace function getTotalViewOfXrays()
+returns integer as $$
+begin
+	RETURN (select sum(ras_count) from table_files
+	where image_type = 'xray' and 
+	shoot_id in (0,1) and
+	status in ('metadata','processed','viewed') and 
+	assigned_to not in ('perspicio_rad','som')); 
+end;
+$$ language plpgsql;
+
+create or replace function getTotalCountOfXrays()
+returns integer as $$
+begin
+	RETURN (select count(image_type) from table_files
+	where image_type = 'xray' and 
+	shoot_id = 0 and
+	status in ('metadata','processed','viewed') and 
+	assigned_to not in ('perspicio_rad','som')); 
+end;
+$$ language plpgsql;
+
+select gettotalviewofxrays() as Total_views_Of_xrays, getTotalCountOfXrays() as Total_xrays, CAST(gettotalviewofxrays() as float)/getTotalCountOfXrays() as Ratio_of_view_and_xray
+
+
+Create or replace function getCountAndtotalOfViewAndXraysByBodyPart()
+returns table(xray_type varchar, total_views bigint, xrays_count bigint) as $$
+begin
+	RETURN query select mt.xray_type, sum(tf.ras_count) as total_views, count(tf.image_type) as xrays_count from table_files as tf
+	join metadata as mt
+	on tf.id = mt.file_id
+	where tf.image_type = 'xray' and 
+	tf.shoot_id in (0,1) and
+	tf.status in ('metadata','processed','viewed') and 
+	tf.assigned_to not in ('perspicio_rad','som') and 
+	mt.xray_type is not null
+	group by mt.xray_type
+	order by mt.xray_type;
+end;
+$$ language plpgsql VOLATILE;
+
+select *, Cast(total_views as float)/xrays_count as Ratio from getcountandtotalofviewandxraysbybodypart();
+
+
+
+
+select mt.xray_type, sum(tf.ras_count) as total_views from table_files as tf
+join metadata as mt
+on tf.id = mt.file_id
+where tf.image_type = 'xray' and 
+tf.shoot_id in (0,1) and
+tf.status in ('metadata','processed','viewed') and 
+tf.assigned_to not in ('perspicio_rad','som') and 
+mt.xray_type is not null
+group by mt.xray_type
+order by mt.xray_type;
+
+select mt.xray_type, count(tf.image_type) as total_count from table_files as tf
+join metadata as mt
+on tf.id = mt.file_id
+where tf.image_type = 'xray' and 
+tf.shoot_id = 0 and
+tf.status in ('metadata','processed','viewed') and 
+tf.assigned_to not in ('perspicio_rad','som') and 
+mt.xray_type is not null
+group by mt.xray_type
+order by mt.xray_type;
+
+
+
+
+
+
+(select mt.xray_type,sum(tf.ras_count) from public.table_files tf
+left join metadata mt 
+on tf.id = mt.file_id
+where image_type = 'xray' and 
+shoot_id in (0,1)  and
+status in ('metadata','processed','viewed') and 
+assigned_to not in ('perspicio_rad','som') 
+group by mt.xray_type
+order by mt.xray_type)
+select mt.xray_type,count(*) from public.table_files tf
+left join metadata mt 
+on tf.id = mt.file_id
+where image_type = 'xray' and 
+shoot_id = 0  and
+status in ('metadata','processed','viewed') and 
+assigned_to not in ('perspicio_rad','som') 
+group by mt.xray_type
+order by mt.xray_type
+
+
+select sum(ras_count) from public.table_files
+where image_type = 'xray' and 
+shoot_id in (0,1)  and
+status in ('metadata','processed','viewed') and 
+assigned_to not in ('perspicio_rad','som')
+
+-- select sum(tf.ras_count) as total_views, count(tf.image_type) as xrays_count from table_files as tf
+-- left join metadata as mt
+select mt.xray_type, sum(tf.ras_count) as total_views, count(tf.image_type) as xrays_count from table_files as tf
+left join metadata mt
+on mt.id = tf.group_id
+where tf.image_type = 'xray' and 
+tf.shoot_id in (0,1) and
+tf.status in ('metadata','processed','viewed') and 
+tf.assigned_to not in ('perspicio_rad','som') 
+group by mt.xray_type
+order by mt.xray_type;
+
+select mt.xray_type,sum(tf.ras_count),(select count(*) from table_files tf join metadata mt on mt.file_id = tf.id where image_type = 'xray' and 
+tf.shoot_id = 0 and
+tf.status in ('metadata','processed','viewed') and 
+tf.assigned_to not in ('perspicio_rad','som')
+group by mt.xray_type) from table_files tf
+left join metadata mt
+on tf.id = mt.file_id
+where tf.image_type = 'xray' and 
+tf.shoot_id in (0,1) and
+tf.status in ('metadata','processed','viewed') and 
+tf.assigned_to not in ('perspicio_rad','som') 
+group by mt.xray_type
+order by mt.xray_type
+
+
+select sum(tf.ras_count),count(tf.image_type) from table_files tf
+join metadata mt
+on mt.file_id = tf.id
+right join metadata mt1
+on mt1.id = tf.group_id
+where tf.image_type = 'xray' and 
+tf.shoot_id in (0,1) and
+tf.status in ('metadata','processed','viewed') and 
+tf.assigned_to not in ('perspicio_rad','som') 
+
+select mt.xray_type,sum(tf.ras_count) from table_files tf
+full join metadata mt
+on tf.id = mt.file_id
+full join metadata mt1
+on mt1.id = tf.group_id
+where tf.image_type = 'xray' and
+tf.shoot_id in (0,1) and 
+tf.status in ('metadata','processed','viewed') and 
+tf.assigned_to not in ('perspicio_rad','som')
+group by mt.xray_type
+order by mt.xray_type
+
+select * from table_files tf
+full outer join metadata mt
+on tf.id = mt.file_id
+where tf.image_type = 'xray' and
+tf.shoot_id = 0 and 
+tf.status in ('metadata','processed','viewed') and 
+tf.assigned_to not in ('perspicio_rad','som')
+group by mt.xray_type
+order by mt.xray_type
+
+
+
+select mt.xray_type,sum(tf.ras_count) from table_files tf
+join metadata mt
+on tf.group_id = mt.id
+where tf.image_type = 'xray' and
+tf.shoot_id in (0,1) and 
+tf.status in ('metadata','processed','viewed') and 
+tf.assigned_to not in ('perspicio_rad','som') 
+group by mt.xray_type
+order by mt.xray_type
+
+select mt.xray_type,sum(tf.ras_count) from table_files tf
+join metadata mt
+on tf.group_id = mt.id
+where tf.image_type = 'xray' and
+tf.shoot_id = 0 and 
+tf.status in ('metadata','processed','viewed') and 
+tf.assigned_to not in ('perspicio_rad','som') 
+group by mt.xray_type
+order by mt.xray_type
+
+
+Create or replace function get_total_views_of_xrays_by_bodypart()
+returns table(xray_type varchar, total_views bigint) as $$
+begin
+	RETURN query select mt.xray_type,sum(tf.ras_count) as total_views from table_files tf
+	join metadata mt
+	on tf.group_id = mt.id
+	where tf.image_type = 'xray' and
+	tf.shoot_id in (0,1) and 
+	tf.status in ('metadata','processed','viewed') and 
+	tf.assigned_to not in ('perspicio_rad','som') 
+	group by mt.xray_type
+	order by mt.xray_type;
+end;
+$$ language plpgsql VOLATILE;
+
+
+Create or replace function get_total_count_of_xrays_by_bodypart()
+returns table(xray_type varchar, total_xray_count bigint) as $$
+begin
+	RETURN query select mt.xray_type,count(tf.image_type) as total_xray_count from table_files tf
+	join metadata mt
+	on tf.group_id = mt.id
+	where tf.image_type = 'xray' and
+	tf.shoot_id in (0) and 
+	tf.status in ('metadata','processed','viewed') and 
+	tf.assigned_to not in ('perspicio_rad','som') 
+	group by mt.xray_type
+	order by mt.xray_type;
+end;
+$$ language plpgsql VOLATILE;
+
+create temporary table temp_tbl_xray_count_by_bodyparts as select mt.xray_type,count(tf.image_type) as total_xray_count from table_files tf
+	left join metadata mt
+	on tf.group_id = mt.id
+	where tf.image_type = 'xray' and
+	tf.shoot_id in (0) and 
+	tf.status in ('metadata','processed','viewed') and 
+	tf.assigned_to not in ('perspicio_rad','som') 
+	group by mt.xray_type
+	order by mt.xray_type;
+	
+	
+create temporary table temp_tbl_xray_views_by_bodyparts as select mt.xray_type,sum(tf.ras_count) as total_views from table_files tf
+	left join metadata mt
+	on tf.group_id = mt.id
+	where tf.image_type = 'xray' and
+	tf.shoot_id in (0,1) and 
+	tf.status in ('metadata','processed','viewed') and 
+	tf.assigned_to not in ('perspicio_rad','som') 
+	group by mt.xray_type
+	order by mt.xray_type;
+	
+	
+select tmp_views.*,tmp_counts.total_xray_count,CAST(tmp_views.total_views as float)/tmp_counts.total_xray_count as ratio from temp_tbl_xray_views_by_bodyparts tmp_views
+join temp_tbl_xray_count_by_bodyparts tmp_counts
+on tmp_views.xray_type = tmp_counts.xray_type
+order by ratio desc
+
+-- select count(*) from table_files
+-- where created_by = ''
+
+-- update table_files
+-- set created_by = 'None'
+-- where created_by = ''
+
+
+-- How many clients viewed the reports and who reported it
+-- extract(year from tf.created_on) as YearCreated
+select tf.username,tf.assigned_to as reported_by,count(*) as resolved_request from table_files tf
+left join metadata mt
+on tf.group_id = mt.id
+where tf.image_type = 'xray' and
+tf.shoot_id in (0,1) and 
+tf.status = 'viewed' and 
+tf.assigned_to not in ('perspicio_rad','som') 
+group by tf.username,tf.assigned_to
+order by tf.username,resolved_request desc
+
+-- Who responds/resolves more requests by year
+select extract(year from updated_on) as YearUpdatedOn,assigned_to,count(*) from table_files
+where image_type = 'xray' and
+shoot_id in (0,1) and 
+status = 'viewed' and 
+assigned_to not in ('perspicio_rad','som')
+group by YearUpdatedOn,assigned_to
+order by YearUpdatedOn,count(*) desc
+
+
+-- How much time taken in resolving a request
+select 
+select distinct(assigned_to) from table_files
+
+select created_on,updated_on,EXTRACT(EPOCH FROM (updated_on - created_on ))/60  as response_time_in_minutes from table_files
+
+
+
+Create or replace function get_total_count_of_xrays_by_bodypart()
+returns table(xray_type varchar, total_xray_count bigint) as $$
+begin
+	RETURN query select mt.xray_type,count(tf.image_type) as total_xray_count from table_files tf
+	join metadata mt
+	on tf.group_id = mt.id
+	where tf.image_type = 'xray' and
+	tf.shoot_id in (0) and 
+	tf.status in ('metadata','processed','viewed') and 
+	tf.assigned_to not in ('perspicio_rad','som') 
+	group by mt.xray_type
+	order by mt.xray_type;
+end;
+$$ language plpgsql VOLATILE;
+
+
+drop function getResponseTime
+create or replace function getResponseTime()
+returns table(v12a varchar(255), c1 varchar(255), s1 varchar(255), responded_by varchar(255), co timestamp,up timestamp,response_time_in_minutes double precision) as $$
+begin 
+	RETURN query select username as v12a, created_by as c1, status as s1 , assigned_to as responded_by, created_on as co,updated_on as up ,EXTRACT(EPOCH FROM (updated_on - created_on ))/60  as response_time_in_minutes from table_files
+	where image_type = 'xray' and
+	shoot_id in (0,1) and 
+	status = 'viewed' and 
+	assigned_to not in ('perspicio_rad','som');
+end;
+$$ language plpgsql VOLATILE;
+
+select responded_by,sum(response_time_in_minutes)  from getResponseTime()
+group by responded_by
+
+
+select assigned_to as responded_by,extract(year from created_on) as years, 
+Sum(EXTRACT(EPOCH FROM (updated_on - created_on ))/3600) as total_response_time_in_hrs,
+min(EXTRACT(EPOCH FROM (updated_on - created_on ))/3600) as min_time_in_hrs,
+avg(EXTRACT(EPOCH FROM (updated_on - created_on ))/3600) as avg_time_in_hrs,
+max(EXTRACT(EPOCH FROM (updated_on - created_on ))/3600) as max_time_in_hrs from table_files
+where image_type = 'xray' and
+shoot_id in (0,1) and 
+status = 'viewed' and 
+assigned_to not in ('perspicio_rad','som')
+group by responded_by,years
+order by total_response_time_in_hrs desc
+
+select created_on,updated_on,to_char(to_timestamp(EXTRACT(EPOCH FROM (updated_on - created_on ))),'HH24:MI:SS') from table_files
+select assigned_to as responded_by,extract(year from created_on) as years, 
+Sum(EXTRACT(EPOCH FROM (updated_on - created_on ))/60) as total_response_time_in_hrs,
+min(EXTRACT(EPOCH FROM (updated_on - created_on ))/3600) as min_time_in_hrs,
+avg(EXTRACT(EPOCH FROM (updated_on - created_on ))/3600) as avg_time_in_hrs,
+max(EXTRACT(EPOCH FROM (updated_on - created_on ))/3600) as max_time_in_hrs from table_files
+where image_type = 'xray' and
+shoot_id in (0,1) and 
+status = 'viewed' and 
+assigned_to not in ('perspicio_rad','som')
+group by responded_by,years
+order by total_response_time_in_hrs desc
+
+
+-- When do people report? by time of a day and day of a week
+select assigned_to, date_trunc('day',updated_on) as dt, count(*) from table_files
+where image_type = 'xray' and
+shoot_id in (0,1) and 
+status = 'viewed' and 
+assigned_to not in ('perspicio_rad','som') and
+assigned_to = 'Dr_Prajakta_Pawnikar'
+group by assigned_to,dt
+order by dt
+
+
+-- Add a column "reporting_time_in_mins"
+alter table table_files
+add column reporting_time_in_mins double precision;
+
+select * from table_files limit 10
+
+-- Delete these columns [deleted_on, og_reported_by, second_opinion, ]
+alter table table_files
+drop column deleted_on, 
+drop column og_reported_by, 
+drop column second_opinion;
+
+create table table_files_with_time_diff AS (select *,EXTRACT(EPOCH FROM (updated_on - created_on ))/60 as reporting_time_in_mins from table_files);
+
+select assigned_to,date_trunc('day',created_on) as dt,to_char(created_on,'Day') dow,count(*) from table_files_with_time_diff
+group by assigned_to,dt,dow
+
+select *, to_char(created_on,'Day') as created_on_day_of_week,to_char(updated_on,'Day') as updated_on_day_of_week from table_files_with_time_diff
+select created_on,date_part('day',created_on),date_part('hour',created_on),date_part('minute',created_on),date_part('second',created_on) from table_files
+select * from table_files_with_time_diff order by 1 desc limit 10 
+
+select created_on,updated_on,concat(extract(epoch from(updated_on-created_on))/60,':',to_char(to_timestamp(extract(epoch from (updated_on-created_on))),'MI:SS')) from table_files
+
+select *,
+  to_char(
+  (
+    updated_on-created_on
+  ),
+  'HH24:MI:SS' as 
+) from table_files
+select * from table_files limit 10 
+drop table table_files_with_diff
+create table table_files_with_diff AS 
+(select id,username,status,assigned_to,created_on,updated_on,created_by,updated_by,group_id,image_type,shoot_id,ras_count,to_char((updated_on - created_on),'HH24:MI:SS') as time_taken_to_report,to_char(updated_on,'Day') as updated_on_day,to_char(updated_on,'Month') as updated_on_month from table_files)
+-- alter table table_files_with_diff
+-- rename column to_char to time_taken_to_report
+
+-- What is the reporting time of doctor by year, month and day of a week
+select assigned_to as reported_by,to_char(updated_on,'yyyy') as years, updated_on_month,updated_on_day,
+	   sum(time_taken_to_report::time) as total_reporting_time_taken_hh_mm_ss,
+	   min(time_taken_to_report::time) as min_reporting_time_taken_hh_mm_ss,
+	   avg(time_taken_to_report::time) as avg_reporting_time_taken_hh_mm_ss,
+	   max(time_taken_to_report::time) as max_reporting_time_taken_hh_mm_ss,count(*) as count_of_xrays from table_files_with_diff
+where image_type = 'xray' and
+shoot_id in (0) and 
+-- status in ('metadata','processed','viewed') and 
+status in ('processed') and
+assigned_to not in ('perspicio_rad','som') 
+-- assigned_to = 'Dr_Paras_Patil'
+group by assigned_to,years,updated_on_month,updated_on_day
+order by years,to_date(updated_on_month,'Month'),to_date(updated_on_day,'Day') desc
+
+
+-- What is the reporting time by year and month
+select to_char(updated_on,'yyyy') as years, updated_on_month,
+	   sum(time_taken_to_report::time) as total_reporting_time_taken_hh_mm_ss,
+	   min(time_taken_to_report::time) as min_reporting_time_taken_hh_mm_ss,
+	   avg(time_taken_to_report::time) as avg_reporting_time_taken_hh_mm_ss,
+	   max(time_taken_to_report::time) as max_reporting_time_taken_hh_mm_ss,count(*) as count_of_xrays from table_files_with_diff
+where image_type = 'xray' and
+shoot_id in (0) and 
+-- status in ('metadata','processed','viewed') and 
+status in ('processed') and
+assigned_to not in ('perspicio_rad','som') 
+-- assigned_to = 'Dr_Paras_Patil'
+group by years,updated_on_month
+order by years,to_date(updated_on_month,'Month')
+
+
+-- What is the reporting time of doctors by by year and month
+select assigned_to as reported_by, to_char(updated_on,'yyyy') as years, updated_on_month,
+	   sum(time_taken_to_report::time) as total_reporting_time_taken_hh_mm_ss,
+	   min(time_taken_to_report::time) as min_reporting_time_taken_hh_mm_ss,
+	   avg(time_taken_to_report::time) as avg_reporting_time_taken_hh_mm_ss,
+	   max(time_taken_to_report::time) as max_reporting_time_taken_hh_mm_ss,count(*) as count_of_xrays from table_files_with_diff
+where image_type = 'xray' and
+shoot_id in (0) and 
+-- status in ('metadata','processed','viewed') and 
+status in ('processed') and
+assigned_to not in ('perspicio_rad','som') 
+-- assigned_to = 'Dr_Paras_Patil'
+group by reported_by,years,updated_on_month
+order by reported_by,years,to_date(updated_on_month,'Month')
+
+-- What is the reporting time by year and day of a week
+select to_char(updated_on,'yyyy') as years,updated_on_day,
+	   sum(time_taken_to_report::time) as total_reporting_time_taken_hh_mm_ss,
+	   min(time_taken_to_report::time) as min_reporting_time_taken_hh_mm_ss,
+	   avg(time_taken_to_report::time) as avg_reporting_time_taken_hh_mm_ss,
+	   max(time_taken_to_report::time) as max_reporting_time_taken_hh_mm_ss,count(*) as count_of_xrays from table_files_with_diff
+where image_type = 'xray' and
+shoot_id in (0) and 
+-- status in ('metadata','processed','viewed') and 
+status in ('processed') and
+assigned_to not in ('perspicio_rad','som') 
+group by years,updated_on_day
+order by years,to_date(updated_on_day,'Day')
+
+-- What is the reporting time of doctors by day of a week
+select assigned_to as reported_by,to_char(updated_on,'yyyy') as years,updated_on_day,
+	   sum(time_taken_to_report::time) as total_reporting_time_taken_hh_mm_ss,
+	   min(time_taken_to_report::time) as min_reporting_time_taken_hh_mm_ss,
+	   avg(time_taken_to_report::time) as avg_reporting_time_taken_hh_mm_ss,
+	   max(time_taken_to_report::time) as max_reporting_time_taken_hh_mm_ss,
+	   count(*) as count_of_xrays from table_files_with_diff
+where image_type = 'xray' and
+shoot_id in (0) and 
+-- status in ('metadata','processed','viewed') and 
+status in ('processed') and
+assigned_to not in ('perspicio_rad','som') 
+group by reported_by,years,updated_on_day
+order by reported_by,years
+
+
